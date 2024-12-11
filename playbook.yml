@@ -41,7 +41,7 @@
        cmd: "a2enconf php7.4-fpm"
     - name: Download file with wget
       ansible.builtin.get_url:
-        url: "https://maia3production.s3.sa-east-1.amazonaws.com/cochlear.zip"
+        url: "application url"
         dest: "/home/sites"
         #mode: '0644'
       tags: [download]
