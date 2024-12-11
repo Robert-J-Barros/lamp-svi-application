@@ -1,0 +1,106 @@
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yml
+  ### PHP
+  tasks:
+    - name: Add Ondřej Surý PPA repository
+      apt_repository:
+        repo: ppa:ondrej/php
+        state: present
+    - name: apt-get update
+      ansible.builtin.apt:
+        update_cache: yes
+    
+    - name: Install LAMP Packages8.3
+      apt: name={{ item }} update_cache=yes state=latest
+      loop: [ 'apache2','php8.3','php8.3-fpm','php8.3-mysql','libapache2-mod-php','php8.3-curl','php8.3-gd','php8.3-intl','php8.3-mbstring','php8.3-opcache','php8.3-readline', 'php8.3-soap','php8.3-xml','php8.3-zip', 'php8.3-bcmath', 'php8.3-exif','php8.3-pdo','php8.3-pdo-mysql','php8.3-pdo-odbc','php8.3-odbc','php8.3-posix', 'php8.3-shmop','php8.3-sockets','php8.3-sysvmsg','php8.3-sysvsem','php8.3-sysvshm','php8.3-tokenizer','php8.3-xsl']
+      tags: [ system ]
+    - name: Install LAMP Packages8.3
+      apt: name={{ item }} update_cache=yes state=latest
+      loop: [ 'zip', 'unzip','php7.4','php7.4-fpm','php7.4-mysql','libapache2-mod-php','php7.4-curl','php7.4-gd','php7.4-intl','php7.4-mbstring','php7.4-opcache','php7.4-readline', 'php7.4-soap','php7.4-xml','php7.4-zip', 'php7.4-bcmath', 'php7.4-exif','php7.4-pdo','php7.4-pdo-mysql','php7.4-pdo-odbc','php7.4-odbc','php7.4-posix', 'php7.4-shmop','php7.4-sockets','php7.4-sysvmsg','php7.4-sysvsem','php7.4-sysvshm','php7.4-tokenizer','php7.4-xsl']
+      tags: [ system ]
+
+    - name: enable PHP-FPM on Apache
+      ansible.builtin.command:
+       cmd: "a2enconf php8.3-fpm"
+    
+    - name: enable PHP module on Apache
+      ansible.builtin.command:
+        cmd: "sudo a2enmod rewrite"
+    
+    - name: Create document root production
+      file:
+        path: "/home/sites"
+        state: directory
+        owner: "www-data"
+        group: "www-data"
+
+    - name: enable PHP-FPM on Apache
+      ansible.builtin.command:
+       cmd: "a2enconf php7.4-fpm"
+    - name: Download file with wget
+      ansible.builtin.get_url:
+        url: "https://maia3production.s3.sa-east-1.amazonaws.com/cochlear.zip"
+        dest: "/home/sites"
+        #mode: '0644'
+      tags: [download]
+
+    # Extrai o arquivo zip para o destino desejado
+    - name: Extract ZIP file
+      ansible.builtin.unarchive:
+        src: "/home/sites/cochlear.zip"
+        dest: "/home/sites"
+        remote_src: yes  # Indica que o arquivo já está no servidor remoto
+      tags: [extract]
+
+    - name: Up a virtual host production
+      template:
+        src: "files/apache2/cochlearmaia.conf"
+        dest: "/etc/apache2/sites-enabled/cochlearmaia.conf"
+      tags: [ apache ]
+    - name: Up a virtual host production
+      template:
+        src: "files/apache2/cochlearmaia.conf"
+        dest: "/etc/apache2/sites-enabled/plataform.conf"
+      tags: [ apache ]
+    - name: Up a virtual host production
+      template:
+        src: "files/apache2/cochlearmaia.conf"
+        dest: "/etc/apache2/sites-enabled/redirect.conf"
+      tags: [ apache ]
+    - name: Up a virtual host homolog
+      template:
+        src: "files/apache2/homolog.conf"
+        dest: "/etc/apache2/sites-enabled/training.conf"
+      tags: [ apache ]
+    - name: Copy apache2.conf
+      template:
+        src: "files/apache2/apache2.conf"
+        dest: "/etc/apache2/apache2.conf"
+   
+    - name: enable PHP module on Apache
+      ansible.builtin.command:
+        cmd: "a2enmod rewrite"
+    - name: Ativar o módulo PHP
+      command: a2enmod php7.4
+
+    - name: Ativar os módulos proxy_fcgi e setenvif
+      command: a2enmod proxy_fcgi setenvif
+
+    - name: enable PHP module on Apache
+      ansible.builtin.command:
+        cmd: "a2enmod rewrite"
+
+    - name: Restart Apache service
+      service:
+        name: apache2  # Use 'httpd' se estiver no CentOS/RHEL
+        state: restarted
+    - name: Restart fpm  service
+      service:
+        name: php8.3-fpm  # Use 'httpd' se estiver no CentOS/RHEL
+        state: restarted
+    - name: Restart fpm  service
+      service:
+        name: php7.4-fpm  # Use 'httpd' se estiver no CentOS/RHEL
+        state: restarted

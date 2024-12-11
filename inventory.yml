@@ -1,0 +1,4 @@
+fpv:
+  hosts:
+    svi:
+      ansible_host: ''
